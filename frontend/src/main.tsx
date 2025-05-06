@@ -4,6 +4,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 
 import { routeTree } from './routeTree.gen'
 import { AuthProvider, useAuth } from './auth'
+import { ThemeProvider } from './theme'
 import './styles.css'
 
 // Set up a Router instance
@@ -30,9 +31,11 @@ function InnerApp() {
 
 function App() {
   return (
-    <AuthProvider>
-      <InnerApp />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <InnerApp />
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 

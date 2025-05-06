@@ -13,3 +13,38 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+/* Dark mode transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Dark mode specific styles */
+.dark button {
+  @apply bg-gray-800 hover:bg-gray-700 text-white;
+}
+
+.dark input, .dark textarea, .dark select {
+  @apply bg-gray-800 border-gray-600 text-white;
+}
+
+.dark hr {
+  @apply border-gray-700;
+}
+
+.dark a {
+  @apply text-blue-400 hover:text-blue-300;
+}
+
+/* Light mode form elements styling */
+button:not(.dark button) {
+  @apply bg-white hover:bg-gray-100 text-gray-800 border-gray-300;
+}
+
+input:not(.dark input), textarea:not(.dark textarea), select:not(.dark select) {
+  @apply bg-white border-gray-300 text-gray-800;
+}
+
+a:not(.dark a) {
+  @apply text-blue-600 hover:text-blue-700;
+}
