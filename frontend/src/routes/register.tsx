@@ -65,65 +65,90 @@ function RegisterComponent() {
   }
 
   return (
-    <div className="p-2 grid gap-2 place-items-center">
-      <h3 className="text-xl">Register</h3>
-      <p>Create a new account</p>
-      {error && <p className="text-red-500">{error}</p>}
-      <form className="mt-4 max-w-lg" onSubmit={onFormSubmit}>
-        <fieldset disabled={isSubmitting} className="w-full grid gap-2">
-          <div className="grid gap-2 items-center min-w-[300px]">
-            <label htmlFor="username-input" className="text-sm font-medium">
-              Username
-            </label>
-            <input
-              id="username-input"
-              name="username"
-              placeholder="Choose a username"
-              type="text"
-              className="border rounded-md p-2 w-full"
-              required
-            />
+    <div className="auth-container">
+      <div className="auth-card fade-in">
+        <h1 className="auth-title">Create an Account</h1>
+        
+        <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
+          Join BookTrackr and start tracking your reading progress
+        </p>
+        
+        {error && (
+          <div className="alert alert-error">
+            {error}
           </div>
-          <div className="grid gap-2 items-center">
-            <label htmlFor="password-input" className="text-sm font-medium">
-              Password
-            </label>
-            <input
-              id="password-input"
-              name="password"
-              placeholder="Choose a password"
-              type="password"
-              className="border rounded-md p-2 w-full"
-              required
-            />
-          </div>
-          <div className="grid gap-2 items-center">
-            <label htmlFor="confirm-password-input" className="text-sm font-medium">
-              Confirm Password
-            </label>
-            <input
-              id="confirm-password-input"
-              name="confirmPassword"
-              placeholder="Confirm your password"
-              type="password"
-              className="border rounded-md p-2 w-full"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            className="bg-blue-500 text-white py-2 px-4 rounded-md w-full disabled:bg-gray-300 disabled:text-gray-500"
-          >
-            {isSubmitting ? 'Registering...' : 'Register'}
-          </button>
-        </fieldset>
-      </form>
-      <p className="mt-4">
-        Already have an account?{' '}
-        <Link to="/" className="text-blue-500 hover:underline">
-          Login here
-        </Link>
-      </p>
+        )}
+        
+        <form className="space-y-5" onSubmit={onFormSubmit}>
+          <fieldset disabled={isSubmitting}>
+            <div className="form-group">
+              <label htmlFor="username-input" className="form-label">
+                Username
+              </label>
+              <input
+                id="username-input"
+                name="username"
+                placeholder="Choose a username"
+                type="text"
+                className="form-input"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="password-input" className="form-label">
+                Password
+              </label>
+              <input
+                id="password-input"
+                name="password"
+                placeholder="Choose a password"
+                type="password"
+                className="form-input"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="confirm-password-input" className="form-label">
+                Confirm Password
+              </label>
+              <input
+                id="confirm-password-input"
+                name="confirmPassword"
+                placeholder="Confirm your password"
+                type="password"
+                className="form-input"
+                required
+              />
+            </div>
+            
+            <button
+              type="submit"
+              className="btn btn-primary w-full mt-6"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="loading-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Registering...
+                </span>
+              ) : 'Create Account'}
+            </button>
+          </fieldset>
+        </form>
+        
+        <div className="mt-6 text-center">
+          <p className="text-gray-600 dark:text-gray-400">
+            Already have an account?{' '}
+            <Link to="/" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
+              Login here
+            </Link>
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

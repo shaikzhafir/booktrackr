@@ -4,14 +4,47 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.ico" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111827" />
     <meta
       name="description"
-      content="Web site created using create-tsrouter-app"
+      content="BookTrackr - Track your reading progress and manage your book collection"
     />
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <title>booktrackr</title>
+    <!-- Font import -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Preload dark mode script to prevent flash -->
+    <script>
+      // Immediately set dark mode class before page renders to prevent flash
+      (function() {
+        function setTheme() {
+          // Check if user preference is dark, or if system preference is dark and user has no preference
+          if (
+            localStorage.getItem('theme') === 'dark' ||
+            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          ) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
+        
+        // Set theme immediately
+        setTheme();
+        
+        // Also handle if localStorage changes
+        window.addEventListener('storage', function(e) {
+          if (e.key === 'theme') {
+            setTheme();
+          }
+        });
+      })();
+    </script>
+    <title>BookTrackr</title>
   </head>
   <body>
     <div id="app"></div>

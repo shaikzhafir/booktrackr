@@ -5,6 +5,7 @@ import {
   createFileRoute,
   redirect,
   useRouter,
+  useRouterState,
 } from '@tanstack/react-router'
 
 import { useAuth } from '../auth'
@@ -27,6 +28,7 @@ function AuthLayout() {
   const router = useRouter()
   const navigate = Route.useNavigate()
   const auth = useAuth()
+  const pathname = useRouterState({ select: s => s.location.pathname })
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -39,38 +41,47 @@ function AuthLayout() {
   }
 
   return (
-    <div className="p-2 h-full">
-      <h1>Authenticated Route</h1>
-      <p>This route's content is only visible to authenticated users.</p>
-      <ul className="py-2 flex gap-2">
-        <li>
-          <Link
-            to="/dashboard"
-            className="hover:underline data-[status='active']:font-semibold"
-          >
-            Dashboard
-          </Link>
-        </li>
-        <li>
-          <Link
-            to="/books"
-            className="hover:underline data-[status='active']:font-semibold"
-          >
-            Books
-          </Link>
-        </li>
-        <li>
-          <button
-            type="button"
-            className="hover:underline"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
-        </li>
-      </ul>
-      <hr />
-      <Outlet />
+    <div className="container-custom min-h-screen">
+      <header className="py-4 mb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+              BookTrackr
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Track your reading progress
+            </p>
+          </div>
+          <nav className="flex items-center gap-1">
+            <Link
+              to="/dashboard"
+              className={`nav-link ${pathname.includes('/dashboard') ? 'nav-link-active' : ''}`}
+            >
+              Dashboard
+            </Link>
+            <Link
+              to="/books"
+              className={`nav-link ${pathname.includes('/books') ? 'nav-link-active' : ''}`}
+            >
+              Books
+            </Link>
+            <div className="mx-2 h-6 border-r border-gray-300 dark:border-gray-700"></div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium">{auth.user}</span>
+              <button
+                type="button"
+                className="btn btn-ghost text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </div>
+          </nav>
+        </div>
+      </header>
+      <main className="content-area">
+        <Outlet />
+      </main>
     </div>
   )
 }
