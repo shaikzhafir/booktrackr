@@ -1,16 +1,16 @@
 package handlers
 
 import (
+	log "booktrackr/logging"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
-	"booktracking/auth"
-	"booktracking/db"
+	"booktrackr/auth"
+	"booktrackr/db"
 )
 
 // RegisterHandler handles user registration
@@ -20,9 +20,7 @@ func RegisterHandler(store *db.Queries) http.HandlerFunc {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
-
-		fmt.Println("Registering user...")
-
+		log.Info("Registering user")
 		var req struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
@@ -91,9 +89,7 @@ func LoginHandler(store *db.Queries) http.HandlerFunc {
 			WriteJSONError(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-
-		ctx := context.Background()
-
+		ctx := r.Context()
 		// Find user by username
 		user, err := store.GetUserByUsername(ctx, req.Username)
 		if err != nil {
@@ -108,6 +104,7 @@ func LoginHandler(store *db.Queries) http.HandlerFunc {
 		}
 
 		// Generate session
+		// TODO right now this isnt used at all by FE lol, will add when it matters
 		sessionID, err := auth.GenerateSessionID()
 		if err != nil {
 			WriteJSONError(w, "Failed to create session", http.StatusInternalServerError)
@@ -191,7 +188,7 @@ func MeHandler(store *db.Queries) http.HandlerFunc {
 
 		ctx := context.Background()
 		userID := GetUserID(r.Context())
-		log.Printf("User ID: %d", userID)
+		log.Info("User ID: %d", userID)
 		// Get user info from database
 		user, err := store.GetUserByID(ctx, userID)
 		if err != nil {

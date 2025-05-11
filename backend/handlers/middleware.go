@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"strconv"
 
-	"booktracking/auth"
+	"booktrackr/auth"
+	log "booktrackr/logging"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -19,11 +19,11 @@ const UserIDKey contextKey = "userID"
 // GetUserID retrieves the user ID from context
 func GetUserID(ctx context.Context) int64 {
 	userID := ctx.Value(UserIDKey)
-	log.Printf("User ID from context: %v", userID)
+	log.Info("User ID from context: %v", userID)
 	value, err := strconv.ParseInt(userID.(string), 10, 64)
 	if err != nil {
 		// Handle error
-		log.Printf("Error parsing user ID: %v", err)
+		log.Info("Error parsing user ID: %v", err)
 		return 0
 	}
 	return value
@@ -43,7 +43,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			WriteJSONError(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		log.Printf("User ID from session: %d", userID)
+		log.Info("User ID from session: %s", userID)
 		// Add user ID to context
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 		next(w, r.WithContext(ctx))

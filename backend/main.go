@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"booktracking/db"
-	"booktracking/handlers"
+	"booktrackr/db"
+	"booktrackr/handlers"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -31,6 +31,7 @@ func main() {
 	}
 
 	store := db.New(conn)
+	bh := handlers.NewBookHandler(store)
 
 	mux := http.NewServeMux()
 
@@ -39,10 +40,12 @@ func main() {
 	mux.HandleFunc("/login", handlers.LoginHandler(store))
 	mux.HandleFunc("/logout", handlers.LogoutHandler())
 	mux.HandleFunc("/me", handlers.AuthMiddleware(handlers.MeHandler(store)))
+	mux.HandleFunc("GET /books", handlers.AuthMiddleware(bh.ListExternalBooks()))
 
 	// Protected routes
 	mux.HandleFunc("/books", handlers.AuthMiddleware(handlers.BooksHandler(store)))
-	mux.HandleFunc("/books/", handlers.AuthMiddleware(handlers.BookHandler(store)))
+	mux.HandleFunc("POST /user/books", handlers.AuthMiddleware(bh.CreateUserBook()))
+	mux.HandleFunc("GET /user/books", handlers.AuthMiddleware(bh.ListUserBooks()))
 
 	fmt.Println("Server running at http://localhost:8080")
 	handler := handlers.WithCORS(mux)

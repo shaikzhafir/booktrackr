@@ -14,6 +14,24 @@ interface Book {
     image_url: string
 }
 
+// External book interface from Google Books API
+interface ExternalBook {
+  id: string
+  volumeInfo: {
+    title: string
+    authors?: string[]
+    description?: string
+    industryIdentifiers?: Array<{
+      type: string
+      identifier: string
+    }>
+    imageLinks?: {
+      thumbnail?: string
+      smallThumbnail?: string
+    }
+  }
+}
+
 // Form data for creating a new book
 interface BookFormData {
   title: string
@@ -31,9 +49,13 @@ export const Route = createFileRoute('/_auth/books')({
 function RouteComponent() {
   const { user } = useAuth()
   const [books, setBooks] = useState<Book[]>([])
+  const [externalBooks, setExternalBooks] = useState<ExternalBook[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchLoading, setSearchLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showExternalBooks, setShowExternalBooks] = useState(false)
+
   // Form state
   const [formData, setFormData] = useState<BookFormData>({
     title: '',
@@ -60,7 +82,7 @@ function RouteComponent() {
       console.log('Fetching books for user:', user);
       
       
-      const response = await fetch('http://localhost:8080/books', {
+      const response = await fetch('http://localhost:8080/user/books', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -135,6 +157,107 @@ function RouteComponent() {
     }
   }
 
+  // Search for external books
+  const searchExternalBooks = async () => {
+    console.log('searchExternalBooks called');
+    
+    if (!searchQuery.trim()) {
+      setError('Please enter a search query')
+      return
+    }
+
+    try {
+      setSearchLoading(true)
+      setError(null)
+
+      const response = await fetch(`http://localhost:8080/books?query=${encodeURIComponent(searchQuery)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user}`
+        }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch external books')
+      }
+
+      const result = await response.json()
+      console.log('Fetched external books:', result)
+
+      if (result.data && Array.isArray(result.data)) {
+        setExternalBooks(result.data)
+        setShowExternalBooks(true)
+      } else {
+        setExternalBooks([])
+        setError('No books found')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error searching books')
+      console.error('Error searching books:', err)
+    } finally {
+      setSearchLoading(false)
+    }
+  }
+
+  // Add external book to user's collection
+  const addExternalBook = async (book: ExternalBook) => {
+    try {
+      setError(null)
+
+      // Extract ISBN if available
+      let isbn = ''
+      if (book.volumeInfo.industryIdentifiers && book.volumeInfo.industryIdentifiers.length > 0) {
+        const isbnObj = book.volumeInfo.industryIdentifiers.find(id =>
+          id.type === 'ISBN_13' || id.type === 'ISBN_10'
+        )
+
+        if (isbnObj) {
+          isbn = isbnObj.identifier
+        }
+      }
+
+      const response = await fetch('http://localhost:8080/user/books', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user}`
+        },
+        body: JSON.stringify({
+          title: book.volumeInfo.title,
+          author: book.volumeInfo.authors ? book.volumeInfo.authors.join(', ') : 'Unknown',
+          isbn: isbn,
+          description: book.volumeInfo.description || '',
+          image_url: book.volumeInfo.imageLinks?.thumbnail || ''
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to add book')
+      }
+
+      const result = await response.json()
+      console.log('Added book result:', result)
+
+      // Refresh book list
+      fetchBooks()
+
+      // Hide external books
+      setShowExternalBooks(false)
+      setSearchQuery('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error adding book')
+      console.error('Error adding book:', err)
+    }
+  }
+
+  // Handle search input change
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }
+
   // Update form data
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -148,27 +271,141 @@ function RouteComponent() {
     <div className="container-custom">
       <div className="page-header">
         <h1 className="page-title">My Books</h1>
-        <button 
-          onClick={() => setFormVisible(!formVisible)}
-          className={`btn ${formVisible ? 'btn-danger' : 'btn-primary'}`}
-        >
-          {formVisible ? (
-            <span className="flex items-center">
-              <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <div className="flex space-x-2">
+          <button
+            onClick={() => {
+              setFormVisible(!formVisible)
+              if (showExternalBooks) setShowExternalBooks(false)
+            }}
+            className={`btn ${formVisible ? 'btn-danger' : 'btn-primary'}`}
+          >
+            {formVisible ? (
+              <span className="flex items-center">
+                <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                Cancel
+              </span>
+            ) : (
+              <span className="flex items-center">
+                <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+                Add Book Manually
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => fetchBooks()}
+            className="btn btn-secondary"
+          >
+            Refresh List
+          </button>
+        </div>
+      </div>
+
+      {/* Search Books Section */}
+      <div className="card mb-6">
+        <div className="card-header">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Search for Books</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Search for books to add to your collection</p>
+        </div>
+        <div className="card-body">
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchInputChange}
+              placeholder="Search by title, author, or ISBN..."
+              className="form-input flex-grow"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  searchExternalBooks()
+                }
+              }}
+            />
+            <button
+              onClick={searchExternalBooks}
+              disabled={searchLoading}
+              className="btn btn-primary"
+            >
+              {searchLoading ? (
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : "Search"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* External Books Results */}
+      {showExternalBooks && externalBooks.length > 0 && (
+        <div className="card mb-8 fade-in">
+          <div className="card-header flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Search Results</h2>
+            <button
+              onClick={() => setShowExternalBooks(false)}
+              className="btn btn-sm btn-ghost"
+            >
+              <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
-              Cancel
-            </span>
-          ) : (
-            <span className="flex items-center">
-              <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
-              Add Book
-            </span>
-          )}
-        </button>
-      </div>
+            </button>
+          </div>
+          <div className="card-body">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {externalBooks.map(book => (
+                <div key={book.id} className="card card-hover bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
+                  <div className="flex h-full">
+                    <div className="flex-shrink-0 w-1/3 bg-gray-100 dark:bg-gray-700 flex items-center justify-center p-2">
+                      {book.volumeInfo.imageLinks?.thumbnail ? (
+                        <img
+                          src={book.volumeInfo.imageLinks.thumbnail}
+                          alt={book.volumeInfo.title}
+                          className="max-h-32 object-contain"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://placehold.co/120x160/e2e8f0/64748b?text=No+Cover';
+                          }}
+                        />
+                      ) : (
+                        <div className="h-32 w-full flex items-center justify-center bg-gray-200 dark:bg-gray-600">
+                          <svg className="h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div className="w-2/3 p-4 flex flex-col">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1 line-clamp-2">
+                        {book.volumeInfo.title}
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                        {book.volumeInfo.authors ? book.volumeInfo.authors.join(', ') : 'Unknown author'}
+                      </p>
+                      {book.volumeInfo.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-300 mb-3 line-clamp-3">
+                          {book.volumeInfo.description}
+                        </p>
+                      )}
+                      <div className="mt-auto">
+                        <button
+                          onClick={() => addExternalBook(book)}
+                          className="btn btn-sm btn-primary"
+                        >
+                          Add to My Books
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="alert alert-error">
