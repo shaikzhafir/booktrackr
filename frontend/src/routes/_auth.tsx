@@ -6,62 +6,62 @@ import {
   redirect,
   useRouter,
   useRouterState,
-} from '@tanstack/react-router'
+} from "@tanstack/react-router";
 
-import { useAuth } from '../auth'
+import { useAuth } from "../auth";
 
-export const Route = createFileRoute('/_auth')({
+export const Route = createFileRoute("/_auth")({
   beforeLoad: ({ context, location }) => {
     if (!context.auth.isAuthenticated) {
       throw redirect({
-        to: '/',
+        to: "/",
         search: {
           redirect: location.href,
         },
-      })
+      });
     }
   },
   component: AuthLayout,
-})
+});
 
 function AuthLayout() {
-  const router = useRouter()
-  const navigate = Route.useNavigate()
-  const auth = useAuth()
-  const pathname = useRouterState({ select: s => s.location.pathname })
+  const router = useRouter();
+  const navigate = Route.useNavigate();
+  const auth = useAuth();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
+    if (window.confirm("Are you sure you want to logout?")) {
       auth.logout().then(() => {
         router.invalidate().finally(() => {
-          navigate({ to: '/' })
-        })
-      })
+          navigate({ to: "/" });
+        });
+      });
     }
-  }
+  };
 
   return (
     <div className="container-custom min-h-screen">
       <header className="py-4 mb-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-              BookTrackr
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Track your reading progress
-            </p>
-          </div>
+            <Link to="/">
+              <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                BookTrackr
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Track your reading progress
+              </p>
+            </Link>
           <nav className="flex items-center gap-1">
             <Link
               to="/dashboard"
-              className={`nav-link ${pathname.includes('/dashboard') ? 'nav-link-active' : ''}`}
+              className={`nav-link ${pathname.includes("/dashboard") ? "nav-link-active" : ""}`}
             >
               Dashboard
             </Link>
             <Link
               to="/books"
-              className={`nav-link ${pathname.includes('/books') ? 'nav-link-active' : ''}`}
+              className={`nav-link ${pathname.includes("/books") ? "nav-link-active" : ""}`}
             >
               Books
             </Link>
@@ -83,5 +83,5 @@ function AuthLayout() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

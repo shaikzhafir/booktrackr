@@ -33,10 +33,11 @@ type User struct {
 }
 
 type UserBook struct {
-	UserID     int64         `json:"user_id"`
-	BookID     int64         `json:"book_id"`
-	StartDate  sql.NullTime  `json:"start_date"`
-	Progress   sql.NullInt64 `json:"progress"`
-	FinishDate sql.NullTime  `json:"finish_date"`
-	Rating     sql.NullInt64 `json:"rating"`
+	UserID     int64          `json:"user_id"`
+	BookID     int64          `json:"book_id"`
+	StartDate  sql.NullTime   `json:"start_date"`
+	Progress   sql.NullInt64  `json:"progress"`
+	FinishDate sql.NullTime   `json:"finish_date"`
+	Rating     sql.NullInt64  `json:"rating"`
+	Review     sql.NullString `json:"review"`
 }

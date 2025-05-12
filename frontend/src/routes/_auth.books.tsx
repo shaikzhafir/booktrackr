@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth'
 
@@ -549,10 +549,19 @@ function RouteComponent() {
                     <span className="font-medium">{book.progress}%</span>
                   </div>
                   <div className="progress-container">
-                    <div 
-                      className="progress-bar" 
+                    <div
+                      className="progress-bar"
                       style={{ width: `${book.progress}%` }}>
                     </div>
+                  </div>
+                  <div className="mt-3">
+                    <Link
+                      to="/detail/$bookId"
+                      params={{ bookId: book.id.toString() }}
+                      className="btn btn-sm btn-secondary"
+                    >
+                      View Details
+                    </Link>
                   </div>
                 </div>
               </div>

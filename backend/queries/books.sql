@@ -37,7 +37,22 @@ DELETE FROM books WHERE id = ?;
 INSERT INTO user_books (user_id, book_id) VALUES (?, ?);
 
 -- name: GetUserBook :one
-SELECT * FROM user_books WHERE user_id = ? AND book_id = ?;
+SELECT 
+    ub.user_id,
+    ub.book_id,
+    ub.start_date,
+    ub.progress,
+    ub.finish_date,
+    ub.rating,
+    ub.review,
+    b.isbn,
+    b.title,
+    b.description,
+    b.author,
+    b.image_url
+FROM user_books ub
+JOIN books b ON ub.book_id = b.id
+WHERE ub.user_id = ? AND ub.book_id = ?;
 
 -- name: UpdateUserBook :exec
 UPDATE user_books SET finish_date = ?, rating = ? WHERE user_id = ? AND book_id = ?;

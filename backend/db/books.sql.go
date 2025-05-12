@@ -79,7 +79,22 @@ func (q *Queries) GetBook(ctx context.Context, id int64) (Book, error) {
 }
 
 const getUserBook = `-- name: GetUserBook :one
-SELECT user_id, book_id, start_date, progress, finish_date, rating FROM user_books WHERE user_id = ? AND book_id = ?
+SELECT 
+    ub.user_id,
+    ub.book_id,
+    ub.start_date,
+    ub.progress,
+    ub.finish_date,
+    ub.rating,
+    ub.review,
+    b.isbn,
+    b.title,
+    b.description,
+    b.author,
+    b.image_url
+FROM user_books ub
+JOIN books b ON ub.book_id = b.id
+WHERE ub.user_id = ? AND ub.book_id = ?
 `
 
 type GetUserBookParams struct {
@@ -87,9 +102,24 @@ type GetUserBookParams struct {
 	BookID int64 `json:"book_id"`
 }
 
-func (q *Queries) GetUserBook(ctx context.Context, arg GetUserBookParams) (UserBook, error) {
+type GetUserBookRow struct {
+	UserID      int64          `json:"user_id"`
+	BookID      int64          `json:"book_id"`
+	StartDate   sql.NullTime   `json:"start_date"`
+	Progress    sql.NullInt64  `json:"progress"`
+	FinishDate  sql.NullTime   `json:"finish_date"`
+	Rating      sql.NullInt64  `json:"rating"`
+	Review      sql.NullString `json:"review"`
+	Isbn        string         `json:"isbn"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Author      string         `json:"author"`
+	ImageUrl    string         `json:"image_url"`
+}
+
+func (q *Queries) GetUserBook(ctx context.Context, arg GetUserBookParams) (GetUserBookRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserBook, arg.UserID, arg.BookID)
-	var i UserBook
+	var i GetUserBookRow
 	err := row.Scan(
 		&i.UserID,
 		&i.BookID,
@@ -97,6 +127,12 @@ func (q *Queries) GetUserBook(ctx context.Context, arg GetUserBookParams) (UserB
 		&i.Progress,
 		&i.FinishDate,
 		&i.Rating,
+		&i.Review,
+		&i.Isbn,
+		&i.Title,
+		&i.Description,
+		&i.Author,
+		&i.ImageUrl,
 	)
 	return i, err
 }
@@ -201,7 +237,7 @@ func (q *Queries) ListBooksByUser(ctx context.Context, userID int64) ([]ListBook
 }
 
 const listUserBooks = `-- name: ListUserBooks :many
-SELECT user_id, book_id, start_date, progress, finish_date, rating FROM user_books WHERE user_id = ?
+SELECT user_id, book_id, start_date, progress, finish_date, rating, review FROM user_books WHERE user_id = ?
 `
 
 func (q *Queries) ListUserBooks(ctx context.Context, userID int64) ([]UserBook, error) {
@@ -220,6 +256,7 @@ func (q *Queries) ListUserBooks(ctx context.Context, userID int64) ([]UserBook, 
 			&i.Progress,
 			&i.FinishDate,
 			&i.Rating,
+			&i.Review,
 		); err != nil {
 			return nil, err
 		}

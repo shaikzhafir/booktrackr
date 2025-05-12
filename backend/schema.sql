@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS user_books (
     progress INTEGER DEFAULT 0,
     finish_date TIMESTAMP,
     rating INTEGER,
+    review TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (book_id) REFERENCES books(id),
     PRIMARY KEY (user_id, book_id)

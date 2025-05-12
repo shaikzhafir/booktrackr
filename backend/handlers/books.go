@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	log "booktrackr/logging"
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"booktrackr/db"
 
@@ -37,11 +38,59 @@ type BookHandler interface {
 	GetBook(ctx context.Context, id int64) (db.Book, error)
 	ListExternalBooks() http.HandlerFunc
 	ListUserBooks() http.HandlerFunc
+	GetBookByUserID() http.HandlerFunc
 }
 
 type bookHandler struct {
 	store *db.Queries
 	svc   books.BookService
+}
+
+// ListBookByUserID implements BookHandler.
+func (b *bookHandler) GetBookByUserID() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// extract userID from context
+		userID := GetUserID(r.Context())
+		ctx := r.Context()
+		// Remove trailing slash if any
+		path := strings.TrimSuffix(r.URL.Path, "/")
+
+		// Split the path
+		parts := strings.Split(path, "/")
+		// first is the leading slash
+		// for eg /user/books/1234
+		// Check if we have enough parts and the correct path
+		if len(parts) != 4 || parts[2] != "books" {
+			http.Error(w, "Invalid path", http.StatusBadRequest)
+			return
+		}
+
+		bookIDStr := parts[3]
+
+		if bookIDStr == "" {
+			WriteJSONError(w, "Book ID is required", http.StatusBadRequest)
+			return
+		}
+		bookID, err := strconv.ParseInt(bookIDStr, 10, 64)
+		if err != nil {
+			log.Error("Error parsing book ID: %v", err)
+			WriteJSONError(w, "Invalid Book ID", http.StatusBadRequest)
+			return
+		}
+		book, err := b.store.GetUserBook(ctx, db.GetUserBookParams{
+			UserID: userID,
+			BookID: bookID,
+		})
+		if err != nil {
+			WriteJSONError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		log.Info("Book retrieved: %+v", book)
+		WriteJSON(w, http.StatusOK, JSONResponse{
+			Message: "Book retrieved successfully",
+			Data:    book,
+		})
+	}
 }
 
 // ListExternalBooks implements BookHandler.
@@ -196,7 +245,7 @@ func (b *bookHandler) UpdateBook(ctx context.Context, params db.UpdateBookParams
 func NewBookHandler(store *db.Queries) BookHandler {
 	svc, err := books.NewGoogleBooksService()
 	if err != nil {
-		log.Fatalf("Failed to create Google Books service: %v", err)
+		log.Fatal("Failed to create Google Books service: %v", err)
 	}
 	return &bookHandler{
 		store: store,
@@ -214,16 +263,16 @@ func BooksHandler(store *db.Queries) http.HandlerFunc {
 
 		ctx := context.Background()
 		userID := GetUserID(r.Context())
-		log.Printf("User ID: %d", userID)
+		log.Info("User ID: %d", userID)
 		switch r.Method {
 		case http.MethodGet:
 			books, err := store.ListBooksByUser(ctx, userID)
 			if err != nil {
-				log.Printf("Error retrieving books: %v", err)
+				log.Info("Error retrieving books: %v", err)
 				WriteJSONError(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			log.Printf("Books retrieved: %v", books)
+			log.Info("Books retrieved: %v", books)
 			// convert to a better book format
 			var userBooks []UserBook
 			for _, book := range books {

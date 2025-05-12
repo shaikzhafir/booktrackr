@@ -16,6 +16,7 @@ import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
 import { Route as AuthDashboardImport } from './routes/_auth.dashboard'
 import { Route as AuthBooksImport } from './routes/_auth.books'
+import { Route as AuthDetailBookIdImport } from './routes/_auth.detail.$bookId'
 
 // Create/Update Routes
 
@@ -45,6 +46,12 @@ const AuthDashboardRoute = AuthDashboardImport.update({
 const AuthBooksRoute = AuthBooksImport.update({
   id: '/books',
   path: '/books',
+  getParentRoute: () => AuthRoute,
+} as any)
+
+const AuthDetailBookIdRoute = AuthDetailBookIdImport.update({
+  id: '/detail/$bookId',
+  path: '/detail/$bookId',
   getParentRoute: () => AuthRoute,
 } as any)
 
@@ -87,6 +94,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthDashboardImport
       parentRoute: typeof AuthImport
     }
+    '/_auth/detail/$bookId': {
+      id: '/_auth/detail/$bookId'
+      path: '/detail/$bookId'
+      fullPath: '/detail/$bookId'
+      preLoaderRoute: typeof AuthDetailBookIdImport
+      parentRoute: typeof AuthImport
+    }
   }
 }
 
@@ -95,11 +109,13 @@ declare module '@tanstack/react-router' {
 interface AuthRouteChildren {
   AuthBooksRoute: typeof AuthBooksRoute
   AuthDashboardRoute: typeof AuthDashboardRoute
+  AuthDetailBookIdRoute: typeof AuthDetailBookIdRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthBooksRoute: AuthBooksRoute,
   AuthDashboardRoute: AuthDashboardRoute,
+  AuthDetailBookIdRoute: AuthDetailBookIdRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
@@ -110,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/books': typeof AuthBooksRoute
   '/dashboard': typeof AuthDashboardRoute
+  '/detail/$bookId': typeof AuthDetailBookIdRoute
 }
 
 export interface FileRoutesByTo {
@@ -118,6 +135,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/books': typeof AuthBooksRoute
   '/dashboard': typeof AuthDashboardRoute
+  '/detail/$bookId': typeof AuthDetailBookIdRoute
 }
 
 export interface FileRoutesById {
@@ -127,13 +145,20 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/_auth/books': typeof AuthBooksRoute
   '/_auth/dashboard': typeof AuthDashboardRoute
+  '/_auth/detail/$bookId': typeof AuthDetailBookIdRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '' | '/register' | '/books' | '/dashboard'
+  fullPaths:
+    | '/'
+    | ''
+    | '/register'
+    | '/books'
+    | '/dashboard'
+    | '/detail/$bookId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/register' | '/books' | '/dashboard'
+  to: '/' | '' | '/register' | '/books' | '/dashboard' | '/detail/$bookId'
   id:
     | '__root__'
     | '/'
@@ -141,6 +166,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/_auth/books'
     | '/_auth/dashboard'
+    | '/_auth/detail/$bookId'
   fileRoutesById: FileRoutesById
 }
 
@@ -178,7 +204,8 @@ export const routeTree = rootRoute
       "filePath": "_auth.tsx",
       "children": [
         "/_auth/books",
-        "/_auth/dashboard"
+        "/_auth/dashboard",
+        "/_auth/detail/$bookId"
       ]
     },
     "/register": {
@@ -190,6 +217,10 @@ export const routeTree = rootRoute
     },
     "/_auth/dashboard": {
       "filePath": "_auth.dashboard.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/detail/$bookId": {
+      "filePath": "_auth.detail.$bookId.tsx",
       "parent": "/_auth"
     }
   }
