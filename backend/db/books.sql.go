@@ -297,20 +297,24 @@ func (q *Queries) UpdateBook(ctx context.Context, arg UpdateBookParams) error {
 }
 
 const updateUserBook = `-- name: UpdateUserBook :exec
-UPDATE user_books SET finish_date = ?, rating = ? WHERE user_id = ? AND book_id = ?
+UPDATE user_books SET progress = ? ,finish_date = ?, rating = ?, review = ? WHERE user_id = ? AND book_id = ?
 `
 
 type UpdateUserBookParams struct {
-	FinishDate sql.NullTime  `json:"finish_date"`
-	Rating     sql.NullInt64 `json:"rating"`
-	UserID     int64         `json:"user_id"`
-	BookID     int64         `json:"book_id"`
+	Progress   sql.NullInt64  `json:"progress"`
+	FinishDate sql.NullTime   `json:"finish_date"`
+	Rating     sql.NullInt64  `json:"rating"`
+	Review     sql.NullString `json:"review"`
+	UserID     int64          `json:"user_id"`
+	BookID     int64          `json:"book_id"`
 }
 
 func (q *Queries) UpdateUserBook(ctx context.Context, arg UpdateUserBookParams) error {
 	_, err := q.db.ExecContext(ctx, updateUserBook,
+		arg.Progress,
 		arg.FinishDate,
 		arg.Rating,
+		arg.Review,
 		arg.UserID,
 		arg.BookID,
 	)

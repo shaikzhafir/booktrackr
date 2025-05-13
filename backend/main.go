@@ -47,6 +47,7 @@ func main() {
 	mux.HandleFunc("POST /user/books", handlers.AuthMiddleware(bh.CreateUserBook()))
 	mux.HandleFunc("GET /user/books", handlers.AuthMiddleware(bh.ListUserBooks()))
 	mux.HandleFunc("GET /user/books/{id}", handlers.AuthMiddleware(bh.GetBookByUserID()))
+	mux.HandleFunc("PUT /user/books/{id}", handlers.AuthMiddleware(bh.UpdateUserBook()))
 
 	fmt.Println("Server running at http://localhost:8080")
 	handler := handlers.WithCORS(mux)

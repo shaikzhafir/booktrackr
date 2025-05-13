@@ -55,7 +55,7 @@ JOIN books b ON ub.book_id = b.id
 WHERE ub.user_id = ? AND ub.book_id = ?;
 
 -- name: UpdateUserBook :exec
-UPDATE user_books SET finish_date = ?, rating = ? WHERE user_id = ? AND book_id = ?;
+UPDATE user_books SET progress = ? ,finish_date = ?, rating = ?, review = ? WHERE user_id = ? AND book_id = ?;
 
 -- name: ListUserBooks :many
 SELECT * FROM user_books WHERE user_id = ?;

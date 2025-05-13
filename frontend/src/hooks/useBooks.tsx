@@ -10,11 +10,30 @@ interface BookResponse {
 }
 
 interface Book {
-  id: string;
-  title: string;
-  author: string;
-  isbn: string;
-  publishedYear: number;
+    id: string;
+    title: string;
+    author: string;
+    isbn: string;
+    description: string;
+    image_url: string;
+    user_id?: string;
+    book_id?: string;
+    progress?: number;
+    start_date?: string;
+    finish_date?: string;
+    rating?: number;
+    review?: string;
+  }
+  
+
+interface UserBook {
+    id: string;
+    userId : string;
+    startDate: string;
+    progress : number;
+    finishDate: string;
+    rating: number;
+    review: string;
 }
 
 // Separate loading states for different operations
@@ -36,7 +55,7 @@ interface UseBookReturn {
   fetchBooks: () => Promise<void>;
   getBookById: (id: string) => Promise<BookResponse>;
   createBook: (book: Omit<Book, 'id'>) => Promise<Book>;
-  updateBook: (id: string, book: Partial<Book>) => Promise<Book>;
+  updateBook: (id: string, book: Partial<Book>) => Promise<BookResponse>;
   deleteBook: (id: string) => Promise<void>;
   
   // Helper methods
@@ -156,7 +175,7 @@ export const useBooks = (): UseBookReturn => {
   }, []);
 
   // Update an existing book
-  const updateBook = useCallback(async (id: string, bookUpdate: Partial<Book>): Promise<Book> => {
+  const updateBook = useCallback(async (id: string, bookUpdate: Partial<UserBook>): Promise<BookResponse> => {
     try {
       setOperationLoading('update', true, id);
       
@@ -164,17 +183,21 @@ export const useBooks = (): UseBookReturn => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user}`, // Assuming you have a token
         },
-        body: JSON.stringify(bookUpdate),
+        body: JSON.stringify({
+            id: bookUpdate.id,
+            start_date: bookUpdate.startDate,
+            progress: bookUpdate.progress,
+            finish_date: bookUpdate.finishDate,
+            rating: bookUpdate.rating,
+            review: bookUpdate.review,
+        }),
       });
       
       if (!response.ok) throw new Error('Failed to update book');
       
-      const updatedBook = await response.json();
-      setBooks(prev => prev.map(book => 
-        book.id === id ? updatedBook : book
-      ));
-      return updatedBook;
+      return await response.json();
     } catch (err) {
       throw err instanceof Error ? err : new Error('An error occurred');
     } finally {

@@ -3,10 +3,12 @@ package handlers
 import (
 	log "booktrackr/logging"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"booktrackr/db"
 
@@ -26,6 +28,7 @@ type UserBook struct {
 	StartDate   string `json:"start_date"`
 	FinishDate  string `json:"finish_date"`
 	Rating      int    `json:"rating"`
+	Review      string `json:"review"`
 }
 
 type BookHandler interface {
@@ -39,11 +42,94 @@ type BookHandler interface {
 	ListExternalBooks() http.HandlerFunc
 	ListUserBooks() http.HandlerFunc
 	GetBookByUserID() http.HandlerFunc
+	UpdateUserBook() http.HandlerFunc
 }
 
 type bookHandler struct {
 	store *db.Queries
 	svc   books.BookService
+}
+
+// UpdateUserBook implements BookHandler.
+func (b *bookHandler) UpdateUserBook() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// extract userID from context
+		userID := GetUserID(r.Context())
+		ctx := r.Context()
+		var req struct {
+			ID         string `json:"id"`
+			StartDate  string `json:"start_date"`
+			Progress   int    `json:"progress"`
+			FinishDate string `json:"finish_date"`
+			Rating     int    `json:"rating"`
+			Review     string `json:"review"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			WriteJSONError(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		bookID, err := strconv.ParseInt(req.ID, 10, 64)
+		if err != nil {
+			WriteJSONError(w, "Invalid book ID", http.StatusBadRequest)
+			return
+		}
+
+		var finishDate sql.NullTime
+		var progress sql.NullInt64
+		var rating sql.NullInt64
+		var review sql.NullString
+		if req.Progress != 0 {
+			// Check if the progress is between 0 and 100
+			if req.Progress < 0 || req.Progress > 100 {
+				WriteJSONError(w, "Progress must be between 0 and 100", http.StatusBadRequest)
+				return
+			}
+			// convert to sql.NullInt64
+			progress = sql.NullInt64{Int64: int64(req.Progress), Valid: true}
+		} else {
+			progress = sql.NullInt64{Int64: 0, Valid: false}
+		}
+
+		if req.Rating != 0 {
+			// Check if the rating is between 1 and 5
+			if req.Rating < 1 || req.Rating > 5 {
+				WriteJSONError(w, "Rating must be between 1 and 5", http.StatusBadRequest)
+				return
+			}
+			// convert to sql.NullInt64
+			rating = sql.NullInt64{Int64: int64(req.Rating), Valid: true}
+		} else {
+			rating = sql.NullInt64{Int64: 0, Valid: false}
+		}
+
+		if req.Review != "" {
+			review = sql.NullString{String: req.Review, Valid: true}
+		} else {
+			review = sql.NullString{String: "", Valid: false}
+		}
+
+		if req.FinishDate != "" {
+			finishDate = sql.NullTime{Time: time.Now(), Valid: true}
+		}
+
+		err = b.store.UpdateUserBook(ctx, db.UpdateUserBookParams{
+			UserID:     userID,
+			BookID:     bookID,
+			Progress:   progress,
+			FinishDate: finishDate,
+			Rating:     rating,
+			Review:     review,
+		})
+		if err != nil {
+			WriteJSONError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		WriteJSON(w, http.StatusOK, JSONResponse{
+			Message: "Book updated successfully",
+			Data:    nil,
+		})
+		log.Info("Book updated successfully")
+	}
 }
 
 // ListBookByUserID implements BookHandler.
@@ -88,7 +174,19 @@ func (b *bookHandler) GetBookByUserID() http.HandlerFunc {
 		log.Info("Book retrieved: %+v", book)
 		WriteJSON(w, http.StatusOK, JSONResponse{
 			Message: "Book retrieved successfully",
-			Data:    book,
+			Data: UserBook{
+				ID:          int(book.BookID),
+				Isbn:        book.Isbn,
+				Title:       book.Title,
+				Description: book.Description,
+				Author:      book.Author,
+				ImageURL:    book.ImageUrl,
+				Progress:    int(book.Progress.Int64),
+				StartDate:   book.StartDate.Time.String(),
+				FinishDate:  book.FinishDate.Time.String(),
+				Rating:      int(book.Rating.Int64),
+				Review:      book.Review.String,
+			},
 		})
 	}
 }
