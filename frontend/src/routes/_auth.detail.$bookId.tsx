@@ -57,7 +57,7 @@ function RouteComponent() {
         }
         if (bookResponse.data.finish_date) {
           // Format date for input if needed
-          setFinishDate(bookResponse.data.finish_date.split('T')[0]);
+          setFinishDate(bookResponse.data.finish_date.split(' ')[0]);
         }
       } catch (error) {
         console.error("Error fetching book data:", error);
