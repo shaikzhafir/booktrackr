@@ -109,7 +109,12 @@ func (b *bookHandler) UpdateUserBook() http.HandlerFunc {
 		}
 
 		if req.FinishDate != "" {
-			finishDate = sql.NullTime{Time: time.Now(), Valid: true}
+			// convert string to time.Time
+			parseDate, err := time.Parse(time.RFC3339, req.FinishDate)
+			if err != nil {
+				log.Error("Error parsing finish date: %v", err)
+			}
+			finishDate = sql.NullTime{Time: parseDate, Valid: true}
 		}
 
 		err = b.store.UpdateUserBook(ctx, db.UpdateUserBookParams{
