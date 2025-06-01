@@ -1,6 +1,7 @@
 // hooks/useBooks.ts
 import { useState, useCallback } from 'react';
 import { useAuth } from '../auth'; // Assuming you have an auth context
+import { createApiUrl } from '../config/api';
 
 
 interface BookResponse {
@@ -62,7 +63,7 @@ interface UseBookReturn {
   isLoading: (operation: 'fetchAll' | 'create' | 'update' | 'delete' | 'fetchOne', id?: string) => boolean;
 }
 
-const API_BASE_URL = 'http://localhost:8080/user/books';
+const API_BASE_URL = createApiUrl('/user/books');
 
 const initialLoadingState: LoadingState = {
   fetchAll: false,

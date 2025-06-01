@@ -18,10 +18,6 @@ export const Route = createFileRoute('/register')({
   component: RegisterComponent,
 })
 
-interface RegisterResponse {
-  message: string;
-  error?: string;
-}
 
 function RegisterComponent() {
     const auth = useAuth()

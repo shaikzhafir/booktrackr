@@ -14,7 +14,7 @@ import (
 
 	gBooks "google.golang.org/api/books/v1"
 
-	"booktrackr/pkg/books"
+	books "booktrackr/pkg/googlebooks"
 )
 
 type UserBook struct {

@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"booktrackr/db"
 	"booktrackr/handlers"
@@ -40,10 +42,10 @@ func main() {
 	mux.HandleFunc("/login", handlers.LoginHandler(store))
 	mux.HandleFunc("/logout", handlers.LogoutHandler())
 	mux.HandleFunc("/me", handlers.AuthMiddleware(handlers.MeHandler(store)))
-	mux.HandleFunc("GET /books", handlers.AuthMiddleware(bh.ListExternalBooks()))
+	//mux.HandleFunc("GET /books", handlers.AuthMiddleware(bh.ListExternalBooks()))
 
 	// Protected routes
-	mux.HandleFunc("/books", handlers.AuthMiddleware(handlers.BooksHandler(store)))
+	//mux.HandleFunc("/books", handlers.AuthMiddleware(handlers.BooksHandler(store)))
 	mux.HandleFunc("POST /user/books", handlers.AuthMiddleware(bh.CreateUserBook()))
 	mux.HandleFunc("GET /user/books", handlers.AuthMiddleware(bh.ListUserBooks()))
 	mux.HandleFunc("GET /user/books/{id}", handlers.AuthMiddleware(bh.GetBookByUserID()))
@@ -51,5 +53,33 @@ func main() {
 
 	fmt.Println("Server running at http://localhost:8080")
 	handler := handlers.WithCORS(mux)
+
+	// frontend based
+	mux.HandleFunc("/", spaHandler("../frontend/dist"))
 	log.Fatal(http.ListenAndServe(":8080", handler))
+}
+
+func spaHandler(distPath string) http.HandlerFunc {
+	fileServer := http.FileServer(http.Dir(distPath))
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+
+		// Set cache headers for assets
+		if strings.HasPrefix(path, "/assets/") {
+			w.Header().Set("Cache-Control", "public, max-age=31536000")
+		}
+
+		if _, err := os.Stat(filepath.Join(distPath, path)); err == nil {
+			fileServer.ServeHTTP(w, r)
+			return
+		}
+
+		if strings.HasPrefix(path, "/assets/") {
+			http.NotFound(w, r)
+			return
+		}
+
+		http.ServeFile(w, r, filepath.Join(distPath, "index.html"))
+	}
 }

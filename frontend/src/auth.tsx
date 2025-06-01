@@ -1,5 +1,6 @@
 // this file handles login and logout logic, interacting with backend API
 import * as React from "react";
+import { createApiUrl } from "./config/api";
 
 export interface AuthContext {
   isAuthenticated: boolean;
@@ -44,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = React.useCallback(async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch('http://localhost:8080/login', {
+      const response = await fetch(createApiUrl('/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = React.useCallback(async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch('http://localhost:8080/register', {
+      const response = await fetch(createApiUrl('/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

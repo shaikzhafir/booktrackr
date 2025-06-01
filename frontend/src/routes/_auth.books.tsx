@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth'
+import { createApiUrl } from '../config/api'
 
 // Book interface matching the backend model
 interface Book {
@@ -82,7 +83,7 @@ function RouteComponent() {
       console.log('Fetching books for user:', user);
       
       
-      const response = await fetch('http://localhost:8080/user/books', {
+      const response = await fetch(createApiUrl('/user/books'), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -117,7 +118,7 @@ function RouteComponent() {
     try {
       setError(null)
       
-      const response = await fetch('http://localhost:8080/books', {
+      const response = await fetch(createApiUrl('/books'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +171,7 @@ function RouteComponent() {
       setSearchLoading(true)
       setError(null)
 
-      const response = await fetch(`http://localhost:8080/books?query=${encodeURIComponent(searchQuery)}`, {
+      const response = await fetch(createApiUrl(`/books?query=${encodeURIComponent(searchQuery)}`), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -218,7 +219,7 @@ function RouteComponent() {
         }
       }
 
-      const response = await fetch('http://localhost:8080/user/books', {
+      const response = await fetch(createApiUrl('/user/books'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "../auth";
 import { useEffect, useState } from "react";
 import type { Book } from "../types/books.types";
+import { createApiUrl } from "../config/api";
 
 export const Route = createFileRoute("/_auth/dashboard")({
   component: DashboardPage,
@@ -10,7 +11,6 @@ export const Route = createFileRoute("/_auth/dashboard")({
 
 function DashboardPage() {
   const auth = useAuth();
-  const [books, setBooks] = useState<Book[]>([]);
   const [stats, setStats] = useState({
     completed: { count: 0, percentage: 0 },
     inProgress: { count: 0, percentage: 0 },
@@ -28,7 +28,7 @@ function DashboardPage() {
     try {
       console.log("Fetching books for user:", auth.user);
 
-      const response = await fetch("http://localhost:8080/user/books", {
+      const response = await fetch(createApiUrl("/user/books"), {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -46,7 +46,6 @@ function DashboardPage() {
       const res = await response.json();
       console.log("Fetched books:", res);
       const fetchedBooks: Book[] = res.data || [];
-      setBooks(res.data);
 
        // Calculate stats immediately after setting books
        const totalBooks = fetchedBooks.length;
