@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as SocialredirectImport } from './routes/socialredirect'
 import { Route as RegisterImport } from './routes/register'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
@@ -19,6 +20,12 @@ import { Route as AuthBooksImport } from './routes/_auth.books'
 import { Route as AuthDetailBookIdImport } from './routes/_auth.detail.$bookId'
 
 // Create/Update Routes
+
+const SocialredirectRoute = SocialredirectImport.update({
+  id: '/socialredirect',
+  path: '/socialredirect',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const RegisterRoute = RegisterImport.update({
   id: '/register',
@@ -80,6 +87,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterImport
       parentRoute: typeof rootRoute
     }
+    '/socialredirect': {
+      id: '/socialredirect'
+      path: '/socialredirect'
+      fullPath: '/socialredirect'
+      preLoaderRoute: typeof SocialredirectImport
+      parentRoute: typeof rootRoute
+    }
     '/_auth/books': {
       id: '/_auth/books'
       path: '/books'
@@ -124,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
   '/register': typeof RegisterRoute
+  '/socialredirect': typeof SocialredirectRoute
   '/books': typeof AuthBooksRoute
   '/dashboard': typeof AuthDashboardRoute
   '/detail/$bookId': typeof AuthDetailBookIdRoute
@@ -133,6 +148,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
   '/register': typeof RegisterRoute
+  '/socialredirect': typeof SocialredirectRoute
   '/books': typeof AuthBooksRoute
   '/dashboard': typeof AuthDashboardRoute
   '/detail/$bookId': typeof AuthDetailBookIdRoute
@@ -143,6 +159,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
   '/register': typeof RegisterRoute
+  '/socialredirect': typeof SocialredirectRoute
   '/_auth/books': typeof AuthBooksRoute
   '/_auth/dashboard': typeof AuthDashboardRoute
   '/_auth/detail/$bookId': typeof AuthDetailBookIdRoute
@@ -154,16 +171,25 @@ export interface FileRouteTypes {
     | '/'
     | ''
     | '/register'
+    | '/socialredirect'
     | '/books'
     | '/dashboard'
     | '/detail/$bookId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '' | '/register' | '/books' | '/dashboard' | '/detail/$bookId'
+  to:
+    | '/'
+    | ''
+    | '/register'
+    | '/socialredirect'
+    | '/books'
+    | '/dashboard'
+    | '/detail/$bookId'
   id:
     | '__root__'
     | '/'
     | '/_auth'
     | '/register'
+    | '/socialredirect'
     | '/_auth/books'
     | '/_auth/dashboard'
     | '/_auth/detail/$bookId'
@@ -174,12 +200,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
   RegisterRoute: typeof RegisterRoute
+  SocialredirectRoute: typeof SocialredirectRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   RegisterRoute: RegisterRoute,
+  SocialredirectRoute: SocialredirectRoute,
 }
 
 export const routeTree = rootRoute
@@ -194,7 +222,8 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/_auth",
-        "/register"
+        "/register",
+        "/socialredirect"
       ]
     },
     "/": {
@@ -210,6 +239,9 @@ export const routeTree = rootRoute
     },
     "/register": {
       "filePath": "register.tsx"
+    },
+    "/socialredirect": {
+      "filePath": "socialredirect.tsx"
     },
     "/_auth/books": {
       "filePath": "_auth.books.tsx",

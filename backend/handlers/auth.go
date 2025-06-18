@@ -11,7 +11,19 @@ import (
 
 	"booktrackr/auth"
 	"booktrackr/db"
+
+	"github.com/dghubble/gologin/v2/google"
+	"github.com/dghubble/sessions"
 )
+
+const (
+	sessionName     = "example-google-app"
+	sessionSecret   = "example cookie signing secret"
+	sessionUserKey  = "googleID"
+	sessionUsername = "googleName"
+)
+
+var sessionStore = sessions.NewCookieStore[string](sessions.DebugCookieConfig, []byte(sessionSecret), nil)
 
 // RegisterHandler handles user registration
 func RegisterHandler(store *db.Queries) http.HandlerFunc {
@@ -203,4 +215,25 @@ func MeHandler(store *db.Queries) http.HandlerFunc {
 			"username": user.Username,
 		})
 	}
+}
+
+func IssueSession() http.Handler {
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+		googleUser, err := google.UserFromContext(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		// 2. Implement a success handler to issue some form of session
+		session := sessionStore.New(sessionName)
+		session.Set(sessionUserKey, googleUser.Id)
+		session.Set(sessionUsername, googleUser.Name)
+		if err := session.Save(w); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		http.Redirect(w, req, "http://localhost:3000/socialredirect", http.StatusFound)
+	}
+	return http.HandlerFunc(fn)
 }

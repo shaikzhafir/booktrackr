@@ -8,14 +8,37 @@ import (
 	"encoding/hex"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 	"time"
+
+	"golang.org/x/oauth2"
+	googleOAuth2 "golang.org/x/oauth2/google"
 )
 
 const (
 	SessionCookieName = "session_id"
 	SessionDuration   = 24 * time.Hour
 )
+
+func GetOAuthConfig() (*oauth2.Config, error) {
+	clientID, ok := os.LookupEnv("GOOGLE_CLIENT_ID")
+	if !ok {
+		return nil, errors.New("GOOGLE_CLIENT_ID not set")
+	}
+	clientSecret, ok := os.LookupEnv("GOOGLE_CLIENT_SECRET")
+	if !ok {
+		return nil, errors.New("GOOGLE_CLIENT_SECRET not set")
+	}
+	oauth2Config := &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  "http://localhost:8080/google/callback",
+		Endpoint:     googleOAuth2.Endpoint,
+		Scopes:       []string{"profile", "email"},
+	}
+	return oauth2Config, nil
+}
 
 // HashPassword creates a secure hash of a password
 func HashPassword(password string) string {

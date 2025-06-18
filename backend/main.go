@@ -9,9 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"booktrackr/auth"
 	"booktrackr/db"
 	"booktrackr/handlers"
 
+	"github.com/dghubble/gologin/v2"
+	"github.com/dghubble/gologin/v2/google"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -42,7 +45,16 @@ func main() {
 	mux.HandleFunc("/login", handlers.LoginHandler(store))
 	mux.HandleFunc("/logout", handlers.LogoutHandler())
 	mux.HandleFunc("/me", handlers.AuthMiddleware(handlers.MeHandler(store)))
-	//mux.HandleFunc("GET /books", handlers.AuthMiddleware(bh.ListExternalBooks()))
+
+	// Google OAuth routes
+	googleOAuthConfig, err := auth.GetOAuthConfig()
+	if err != nil {
+		log.Fatalf("failed to get OAuth config: %v", err)
+	}
+	stateConfig := gologin.DebugOnlyCookieConfig
+	mux.Handle("/google/login", google.StateHandler(stateConfig, google.LoginHandler(googleOAuthConfig, gologin.DefaultFailureHandler)))
+	mux.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(googleOAuthConfig, handlers.IssueSession(), gologin.DefaultFailureHandler)))
+	// mux.HandleFunc("GET /books", handlers.AuthMiddleware(bh.ListExternalBooks()))
 
 	// Protected routes
 	//mux.HandleFunc("/books", handlers.AuthMiddleware(handlers.BooksHandler(store)))
