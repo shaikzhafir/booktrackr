@@ -5,6 +5,7 @@ import { createApiUrl } from "./config/api";
 export interface AuthContext {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  verifysession: () => Promise<{ success: boolean; error?: string }>;
   register : (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   user: string | null;
@@ -83,6 +84,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const verifysession = React.useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch(createApiUrl('/verifysession'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for session verification
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        console.log("Social auth verification failed: ", data);
+        // Return error message from server if available, or fallback message
+        return {
+          success: false,
+          error: data.message || data.error || 'Social auth verification failed. Please try again.',
+        };
+      }
+      const authData: AuthResponse = data;
+      console.log("Social auth verification successful: ", authData);
+      setStoredUser(authData.data.id);
+      setUser(authData.data.id);
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error("Error verifying social auth: ", error);
+      return {
+        success: false,
+        error: 'Network error occurred while verifying social auth. Please try again.',
+      };
+    }
+  }, []);
+
   const register = React.useCallback(async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await fetch(createApiUrl('/register'), {
@@ -125,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, register, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, verifysession, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -13,17 +13,7 @@ import (
 	"booktrackr/db"
 
 	"github.com/dghubble/gologin/v2/google"
-	"github.com/dghubble/sessions"
 )
-
-const (
-	sessionName     = "example-google-app"
-	sessionSecret   = "example cookie signing secret"
-	sessionUserKey  = "googleID"
-	sessionUsername = "googleName"
-)
-
-var sessionStore = sessions.NewCookieStore[string](sessions.DebugCookieConfig, []byte(sessionSecret), nil)
 
 // RegisterHandler handles user registration
 func RegisterHandler(store *db.Queries) http.HandlerFunc {
@@ -143,8 +133,9 @@ func LoginHandler(store *db.Queries) http.HandlerFunc {
 		WriteJSON(w, http.StatusOK, JSONResponse{
 			Message: "Login successful",
 			Data: map[string]interface{}{
-				"id":       user.ID,
-				"username": user.Username,
+				"id":         user.ID,
+				"username":   user.Username,
+				"session_id": sessionID,
 			},
 		})
 	}
@@ -217,7 +208,7 @@ func MeHandler(store *db.Queries) http.HandlerFunc {
 	}
 }
 
-func IssueSession() http.Handler {
+func IssueSession(store *db.Queries) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		googleUser, err := google.UserFromContext(ctx)
@@ -225,15 +216,100 @@ func IssueSession() http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		// 2. Implement a success handler to issue some form of session
-		session := sessionStore.New(sessionName)
-		session.Set(sessionUserKey, googleUser.Id)
-		session.Set(sessionUsername, googleUser.Name)
-		if err := session.Save(w); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		// check if user already exists
+		user, err := store.GetUserByUsername(ctx, googleUser.Id)
+		if err != nil && err != sql.ErrNoRows {
+			WriteJSONError(w, "Failed to get user", http.StatusInternalServerError)
 			return
 		}
+		if err == sql.ErrNoRows {
+			// User does not exist, create a new user
+			err = store.CreateUser(ctx, db.CreateUserParams{
+				Username:     googleUser.Id,
+				PasswordHash: "", // No password for OAuth users
+			})
+			if err != nil {
+				log.Error("Failed to create user: %v", err)
+				WriteJSONError(w, "Failed to create user", http.StatusInternalServerError)
+				return
+			}
+			// Fetch the newly created user
+			user, err = store.GetUserByUsername(ctx, googleUser.Id)
+			if err != nil {
+				WriteJSONError(w, "Failed to get user after creation", http.StatusInternalServerError)
+				return
+			}
+		}
+		// extract data from googleUser and persist in session db
+		sessionID, err := auth.GenerateSessionID()
+		if err != nil {
+			WriteJSONError(w, "Failed to create session", http.StatusInternalServerError)
+			return
+		}
+
+		// Store session
+		expiresAt := time.Now().Add(auth.SessionDuration)
+		err = store.CreateSession(ctx, db.CreateSessionParams{
+			ID:        sessionID,
+			UserID:    user.ID,
+			ExpiresAt: expiresAt,
+		})
+
+		if err != nil {
+			WriteJSONError(w, "Failed to create session", http.StatusInternalServerError)
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session_id",
+			Value:    sessionID,
+			HttpOnly: true,
+			Secure:   true, // for HTTPS
+			SameSite: http.SameSiteLaxMode,
+			Path:     "/",
+			MaxAge:   3600 * 24, // 24 hours
+		})
+
+		// add session cookie in w
+		auth.SetSessionCookie(w, sessionID)
 		http.Redirect(w, req, "http://localhost:3000/socialredirect", http.StatusFound)
 	}
 	return http.HandlerFunc(fn)
+}
+
+func VerifySessionHandler(store *db.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		log.Info("Verifying session")
+		ctx := req.Context()
+		sessionID, err := auth.GetSessionIDFromCookie(req)
+		if err != nil || sessionID == "" {
+			log.Error("Failed to get session ID from request: %v", err)
+			WriteJSONError(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		session, err := store.GetSessionByID(ctx, sessionID)
+		if err != nil {
+			WriteJSONError(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if session.ExpiresAt.Before(time.Now()) {
+			WriteJSONError(w, "Session expired", http.StatusUnauthorized)
+			return
+		}
+		// get user by session
+		user, err := store.GetUserByID(ctx, session.UserID)
+		if err != nil {
+			WriteJSONError(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		// If everything is valid, return user info
+		WriteJSON(w, http.StatusOK, JSONResponse{
+			Message: "Session is valid",
+			Data: map[string]interface{}{
+				"id":         user.ID,
+				"username":   user.Username,
+				"session_id": sessionID,
+			},
+		})
+	}
 }

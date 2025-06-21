@@ -83,6 +83,17 @@ func GetSessionIDFromRequest(r *http.Request) (string, error) {
 	return "", errors.New("session ID not found in request")
 }
 
+func GetSessionIDFromCookie(r *http.Request) (string, error) {
+	cookie, err := r.Cookie(SessionCookieName)
+	if err != nil {
+		return "", err
+	}
+	if cookie.Value == "" {
+		return "", errors.New("session ID cookie is empty")
+	}
+	return cookie.Value, nil
+}
+
 // SetSessionCookie adds a session cookie to the response
 func SetSessionCookie(w http.ResponseWriter, sessionID string) {
 	expires := time.Now().Add(SessionDuration)

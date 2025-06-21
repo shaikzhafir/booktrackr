@@ -45,6 +45,7 @@ func main() {
 	mux.HandleFunc("/login", handlers.LoginHandler(store))
 	mux.HandleFunc("/logout", handlers.LogoutHandler())
 	mux.HandleFunc("/me", handlers.AuthMiddleware(handlers.MeHandler(store)))
+	mux.HandleFunc("/verifysession", handlers.VerifySessionHandler(store))
 
 	// Google OAuth routes
 	googleOAuthConfig, err := auth.GetOAuthConfig()
@@ -53,7 +54,7 @@ func main() {
 	}
 	stateConfig := gologin.DebugOnlyCookieConfig
 	mux.Handle("/google/login", google.StateHandler(stateConfig, google.LoginHandler(googleOAuthConfig, gologin.DefaultFailureHandler)))
-	mux.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(googleOAuthConfig, handlers.IssueSession(), gologin.DefaultFailureHandler)))
+	mux.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(googleOAuthConfig, handlers.IssueSession(store), gologin.DefaultFailureHandler)))
 	// mux.HandleFunc("GET /books", handlers.AuthMiddleware(bh.ListExternalBooks()))
 
 	// Protected routes

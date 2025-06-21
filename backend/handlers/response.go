@@ -19,6 +19,13 @@ func WriteJSON(w http.ResponseWriter, status int, response JSONResponse) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func WriteJSONWithRedirect(w http.ResponseWriter, status int, response JSONResponse, redirectURL string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Location", redirectURL)
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(response)
+}
+
 // WriteJSONError is a helper function for writing error responses
 func WriteJSONError(w http.ResponseWriter, message string, status int) {
 	WriteJSON(w, status, JSONResponse{
