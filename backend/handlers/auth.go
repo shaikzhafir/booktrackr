@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"booktrackr/config"
 	log "booktrackr/logging"
 	"context"
 	"database/sql"
@@ -272,7 +273,7 @@ func IssueSession(store *db.Queries) http.Handler {
 
 		// add session cookie in w
 		auth.SetSessionCookie(w, sessionID)
-		http.Redirect(w, req, "http://localhost:3000/socialredirect", http.StatusFound)
+		http.Redirect(w, req, fmt.Sprintf("%s/socialredirect", config.FRONTEND_HOSTNAME), http.StatusFound)
 	}
 	return http.HandlerFunc(fn)
 }

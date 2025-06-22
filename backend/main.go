@@ -58,7 +58,7 @@ func main() {
 	// mux.HandleFunc("GET /books", handlers.AuthMiddleware(bh.ListExternalBooks()))
 
 	// Protected routes
-	//mux.HandleFunc("/books", handlers.AuthMiddleware(handlers.BooksHandler(store)))
+	mux.HandleFunc("GET /google/books", handlers.AuthMiddleware(bh.ListExternalBooks()))
 	mux.HandleFunc("POST /user/books", handlers.AuthMiddleware(bh.CreateUserBook()))
 	mux.HandleFunc("GET /user/books", handlers.AuthMiddleware(bh.ListUserBooks()))
 	mux.HandleFunc("GET /user/books/{id}", handlers.AuthMiddleware(bh.GetBookByUserID()))

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	log "booktrackr/logging"
 	"encoding/json"
 	"net/http"
 )
@@ -28,6 +29,7 @@ func WriteJSONWithRedirect(w http.ResponseWriter, status int, response JSONRespo
 
 // WriteJSONError is a helper function for writing error responses
 func WriteJSONError(w http.ResponseWriter, message string, status int) {
+	log.Error("Error: %s, Status: %d", message, status)
 	WriteJSON(w, status, JSONResponse{
 		Error: message,
 	})

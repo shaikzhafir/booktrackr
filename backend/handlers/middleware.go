@@ -37,7 +37,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			next(w, r)
 			return
 		}
-
+		log.Info("AuthMiddleware called for %s %s", r.Method, r.URL.Path)
 		userID, err := auth.GetSessionIDFromRequest(r)
 		if err != nil {
 			WriteJSONError(w, "Unauthorized", http.StatusUnauthorized)

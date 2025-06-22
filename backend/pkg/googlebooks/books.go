@@ -20,8 +20,8 @@ type bookService struct {
 
 func NewGoogleBooksService() (BookService, error) {
 	// if in dev, skip initialization if API key is not set
-	DEV_MODE := os.Getenv("DEV_MODE")
-	if DEV_MODE == "true" {
+	isProd, ok := os.LookupEnv("PROD")
+	if !ok || isProd != "true" {
 		return nil, nil
 	}
 	API_KEY := os.Getenv("GOOGLE_BOOKS_API_KEY")

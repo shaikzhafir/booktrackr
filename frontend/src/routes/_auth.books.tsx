@@ -171,7 +171,7 @@ function RouteComponent() {
       setSearchLoading(true)
       setError(null)
 
-      const response = await fetch(createApiUrl(`/books?query=${encodeURIComponent(searchQuery)}`), {
+      const response = await fetch(createApiUrl(`/google/books?query=${encodeURIComponent(searchQuery)}`), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
